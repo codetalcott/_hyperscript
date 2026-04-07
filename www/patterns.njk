@@ -1,0 +1,169 @@
+---
+layout: layout.njk
+title: Patterns - ///_hyperscript
+---
+
+<style>
+.patterns-header {
+    margin-bottom: 1.5rem;
+}
+.patterns-header p {
+    color: var(--text-muted);
+}
+
+.patterns-search {
+    width: 100%;
+    font-size: 1rem !important;
+    padding: 8px 12px !important;
+    margin-bottom: 1.5rem;
+}
+
+.category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.category-btn {
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+    cursor: pointer;
+    font-family: var(--font-heading);
+}
+
+.category-btn[data-active] {
+    background: var(--accent, #667eea);
+    color: white;
+    border-color: transparent;
+}
+
+.pattern-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    margin-bottom: 1rem;
+}
+
+.pattern-card[hidden] {
+    display: none;
+}
+
+.pattern-card-header {
+    background: var(--chrome-gradient);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.pattern-card-title {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+}
+
+.pattern-card-tag {
+    font-size: 0.75rem;
+    padding: 1px 8px;
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.pattern-card-body {
+    padding: 16px;
+    background: var(--bg);
+}
+
+.pattern-card-body > :first-child {
+    margin-top: 0;
+}
+
+.pattern-card-body p {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.pattern-card-body pre {
+    margin: 0;
+}
+
+.no-results {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    font-family: var(--font-heading);
+}
+</style>
+
+<div class="patterns-header">
+    <h2 class='allcaps'>Patterns</h2>
+    <p>Common hyperscript patterns. Click a category to filter, or search by keyword.</p>
+</div>
+
+<div class="category-filter"
+     _="on click
+          if the target matches .category-btn
+            if the target matches [data-active]
+              remove @data-active from the target
+            else
+              remove @data-active from .category-btn
+              add @data-active to the target
+            end
+            send filterChanged to .patterns-search
+          end">
+    <button class="category-btn" data-category="all" data-active>All</button>
+    {%- for cat in patterns.categories %}
+    <button class="category-btn" data-category="{{ cat }}">{{ cat | replace("-", " ") }}</button>
+    {%- endfor %}
+</div>
+
+<input type="text" class="patterns-search" placeholder="Search patterns..."
+       _="on input or filterChanged
+            set activeBtn to the first <.category-btn[data-active]/>
+            set cat to ''
+            if activeBtn
+              set cat to activeBtn's @data-category
+            end
+            repeat for card in <.pattern-card/>
+              set text to card's textContent
+              set cardCat to card's @data-category
+              set matchesSearch to (my value is '' or text.toLowerCase() contains my value.toLowerCase())
+              set matchesCat to (cat is '' or cat is 'all' or cardCat is cat)
+              if matchesSearch and matchesCat
+                remove @hidden from card
+              else
+                add @hidden to card
+              end
+            end
+            if (<.pattern-card:not([hidden])/>).length is 0
+              remove @hidden from #no-results
+            else
+              add @hidden to #no-results
+            end" />
+
+<div id="no-results" class="no-results" hidden>No patterns match your search.</div>
+
+{%- for pattern in patterns.items %}
+<div class="pattern-card" data-category="{{ pattern.category }}">
+    <div class="pattern-card-header">
+        <span class="pattern-card-title">{{ pattern.title }}</span>
+        <span class="pattern-card-tag">{{ pattern.category | replace("-", " ") }}</span>
+    </div>
+    <div class="pattern-card-body">
+        {%- if pattern.description %}
+        <p>{{ pattern.description }}</p>
+        {%- endif %}
+        <pre><code class="language-hyperscript">{{ pattern.code }}</code></pre>
+    </div>
+</div>
+{%- endfor %}
